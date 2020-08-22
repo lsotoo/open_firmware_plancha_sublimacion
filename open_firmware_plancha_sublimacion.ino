@@ -7,13 +7,13 @@
 #define alarma_timer 3
 #define resistencia_plancha 2
 //display_1 muestra la temperatura
-#define display1_digit1 31
-#define display1_digit2 28
-#define display1_digit3 29
+#define display1_digit1 30
+#define display1_digit2 8
+#define display1_digit3 9
 //display_2 muestra el tiempo de planchado
-#define display2_digit1 9
-#define display2_digit2 8
-#define display2_digit3 30
+#define display2_digit1 29
+#define display2_digit2 28
+#define display2_digit3 31
 //Comtrol de led 7 segmentos de 3 digitos a traves de un shif Register
 #define clk 7 //rx
 #define data 6 //tx en los datos
