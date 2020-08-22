@@ -4,27 +4,27 @@
 #include "max6675.h"
 
 //Pines del arduino
-#define alarma_timer 0
-#define resistencia_plancha 1
+#define alarma_timer 3
+#define resistencia_plancha 2
 //display_1 muestra la temperatura
-#define display1_digit1 2
-#define display1_digit2 3
-#define display1_digit3 4
+#define display1_digit1 31
+#define display1_digit2 28
+#define display1_digit3 29
 //display_2 muestra el tiempo de planchado
-#define display2_digit1 5
-#define display2_digit2 6
-#define display2_digit3 7
+#define display2_digit1 9
+#define display2_digit2 8
+#define display2_digit3 30
 //Comtrol de led 7 segmentos de 3 digitos a traves de un shif Register
-#define clk 8 //rx
-#define data 9 //tx en los datos
+#define clk 7 //rx
+#define data 6 //tx en los datos
 //pines modulo max6675
-#define ktcSO  10
-#define ktcCS  11
-#define ktcCLK  12
-#define vcc 13 // vcc del max6675
+#define ktcSO  12
+#define ktcCS  10
+#define ktcCLK  13
+//#define vcc 13 // vcc del max6675
 //pines analogos de entrada
 #define botonesFrontales A0
-#define senal_octoacoplador A1 // señal del switch de contacto
+#define senal_octoacoplador 5 // señal del switch de contacto
 
 //*digitos de los display*//
 #define digito_1 0
@@ -51,7 +51,7 @@ int temperatura_actual_plancha = 0;
 const int segundos_delay_plancha = 5000;
 unsigned long ult_delay_plancha = 0;
 boolean esta_encendida_plancha = false;
-boolean sonar_alarma_en_temp=true;
+boolean sonar_alarma_en_temp = true;
 
 //*octoacoplador*//
 
@@ -126,7 +126,7 @@ int valorboton_ant = 1;
 int promedio = 0;
 int maxvalor = 0;
 
-  unsigned long ultimo_print=0;
+unsigned long ultimo_print = 0;
 
 
 //bit 1 = pin 3 //E
@@ -185,6 +185,17 @@ byte Digit_punto[10] =
   B11001010,    // 7
   B00000000,    // 8
   B10000000     // 9
+};
+byte array_display1[3] = {
+  display1_digit1,
+  display1_digit2,    
+  display1_digit3,    
+};
+
+byte array_display2[3] = {
+  display2_digit1,
+  display2_digit2,    
+  display2_digit3,    
 };
 
 void apagar_displays() {
@@ -266,7 +277,7 @@ void Display(int pantalla, int pos, int N)
 
   switch (pantalla) {
     case pantalla_temperatura:
-      digitalWrite(pos + display1_digit1, HIGH);
+      digitalWrite(array_display1[pos], HIGH);
       if (pantalla_actual == pantalla_principal || pantalla_actual == pantalla_menu_tiempo)
         switch (pos) {
           case digito_1://btn_up
@@ -325,7 +336,7 @@ void Display(int pantalla, int pos, int N)
         }
       break;
     case pantalla_contador:
-      digitalWrite(pos + display2_digit1, HIGH);      // Enciende el digito pos
+      digitalWrite(array_display2[pos], HIGH);      // Enciende el digito pos
       if (pantalla_actual == pantalla_principal || pantalla_actual == pantalla_menu_temp)
         if (pos == digito_1) {//btn_set
 
@@ -337,11 +348,11 @@ void Display(int pantalla, int pos, int N)
               tiempo_presion_btn_set = millis();
             }
             if ((millis() - tiempo_presion_btn_set) >= delay_rebote_btn) { //esta correctamente presionado
-                if(alarma_activada){//silencia la alarma con el boton set
-                  silenciar_alarma();
-                  
-                  }
-      
+              if (alarma_activada) { //silencia la alarma con el boton set
+                silenciar_alarma();
+
+              }
+
               // Serial.print("estado_btn_set: ");
               // Serial.println(estado_btn_set);
 
@@ -401,10 +412,11 @@ void CalculaDigitos( int Num, int pantalla)
   switch (pantalla) {
     case pantalla_temperatura:
       Display(pantalla_temperatura, digito_1, Digit1);
-      //(300);
+      //delay(300);
       Display(pantalla_temperatura, digito_2, Digit2);
-      //(300);
+      //delay(300);
       Display(pantalla_temperatura, digito_3, Digit3);
+      //delay(300);
       break;
     case pantalla_contador:
       Display(pantalla_contador, digito_1, Digit1);
@@ -423,9 +435,9 @@ void CalculaDigitos( int Num, int pantalla)
 
 void contar_segundos() {
   int tiempo_restante = 0;
-  valor_octoacoplador = analogRead(senal_octoacoplador);
+  valor_octoacoplador = digitalRead(senal_octoacoplador);
   led_alm = true;
-  if (valor_octoacoplador == 0) {
+  if (valor_octoacoplador == LOW) {
     if (!esta_contando) {
       esta_contando = true;
       tiempo_comienzo_cont = millis();
@@ -499,11 +511,11 @@ void apagar_plancha() {
 void comprobar_temp() {
   unsigned long tiempo_lectura = millis();
   if ((tiempo_lectura - ultima_lectura) > intervalo_lectura_temp) {
-    if(celssius_temp){
+    if (celssius_temp) {
       temperatura_actual_plancha = ktc.readCelsius();
-      }else{
-        temperatura_actual_plancha = ktc.readFahrenheit();
-        }
+    } else {
+      temperatura_actual_plancha = ktc.readFahrenheit();
+    }
     ultima_lectura = millis();
 
     /*
@@ -524,12 +536,12 @@ void comprobar_temp() {
     if (u > 0) {
       encender_plancha();
     } else {
-      if(sonar_alarma_en_temp){
-        sonar_alarma_en_temp=false;
-       
+      if (sonar_alarma_en_temp) {
+        sonar_alarma_en_temp = false;
+
         sonar_alarma();
-        
-        }
+
+      }
       apagar_plancha();
     }
   }
@@ -559,7 +571,7 @@ void mostrar_titulo(byte titulo[]) {
               switch (pantalla_actual) {
                 case pantalla_menu_temp:
                   temperatura_plancha++;
-                  sonar_alarma_en_temp=true;
+                  sonar_alarma_en_temp = true;
 
                   break;
                 case pantalla_menu_c_f:
@@ -605,7 +617,7 @@ void mostrar_titulo(byte titulo[]) {
               switch (pantalla_actual) {
                 case pantalla_menu_temp:
                   temperatura_plancha--;
-                  sonar_alarma_en_temp=true;
+                  sonar_alarma_en_temp = true;
 
                   break;
                 case pantalla_menu_c_f:
@@ -701,6 +713,7 @@ void menu_set_tiempo() {
 void setup() {
   pinMode(alarma_timer , OUTPUT);
   pinMode(resistencia_plancha , OUTPUT);
+  pinMode(senal_octoacoplador , INPUT);
   //  digitalWrite(resistencia_plancha,LOW);
   //  digitalWrite(alarma_timer,LOW);
   pinMode(clk, OUTPUT); // make the clock pin an output
@@ -719,7 +732,7 @@ void setup() {
   //  digitalWrite(display2_digit3,HIGH);
 
   //seteamos los pines del sensor 6675
-  digitalWrite(vcc, HIGH); // le damos energia al sensor
+  //digitalWrite(vcc, HIGH); // le damos energia al sensor
   //Serial.begin(9600);//debug: esa linea mantiene activado los pines digitales 0 y 1(Tx,Rx)
   // give the MAX a little time to settle
   delay(500);
@@ -727,18 +740,18 @@ void setup() {
 }
 
 void loop() {
-  unsigned long tiempo1,tiempo2,tiempo3,tiempo4;
+  unsigned long tiempo1, tiempo2, tiempo3, tiempo4;
 
   ///*
-//tiempo1=millis();
+  //tiempo1=millis();
   switch (pantalla_actual) { //cambia el estado de los display en la IU
     case pantalla_principal:
       comprobar_temp();
-  //    tiempo2=millis();
+      //    tiempo2=millis();
       contar_segundos();
-   //   tiempo3=millis();
+      //   tiempo3=millis();
       mostrar_temperatura();
-     // tiempo4=millis();
+      // tiempo4=millis();
       break;
     case pantalla_menu_temp:
       menu_set_temp();
@@ -750,14 +763,14 @@ void loop() {
       break;
   }
   /*
-if((millis()-ultimo_print)>1000){//imprime la diferencia del tiempo
-  Serial.print("intervalo inicio_comprobar_temp:");
-  Serial.print(tiempo1-tiempo2);
-  Serial.print(", intervalo comprobar_temp: ");
-  Serial.print("");
-  Serial.print("");
-  Serial.println("");
-  }
+    if((millis()-ultimo_print)>1000){//imprime la diferencia del tiempo
+    Serial.print("intervalo inicio_comprobar_temp:");
+    Serial.print(tiempo1-tiempo2);
+    Serial.print(", intervalo comprobar_temp: ");
+    Serial.print("");
+    Serial.print("");
+    Serial.println("");
+    }
   */
   // */
   //digitalWrite(display1_digit2,HIGH);
